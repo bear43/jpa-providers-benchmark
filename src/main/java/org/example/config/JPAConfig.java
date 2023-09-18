@@ -1,15 +1,21 @@
 package org.example.config;
 
 import com.zaxxer.hikari.HikariDataSource;
+import jakarta.annotation.PreDestroy;
 import jakarta.persistence.spi.PersistenceProvider;
+
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.datanucleus.api.jakarta.PersistenceProviderImpl;
 import org.eclipse.persistence.config.PersistenceUnitProperties;
 import org.eclipse.persistence.platform.database.H2Platform;
 import org.example.config.props.HikariProps;
+import org.example.config.provider.JpaVendorAdapterProvider;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.dialect.H2Dialect;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,6 +31,7 @@ import org.springframework.orm.jpa.vendor.AbstractJpaVendorAdapter;
 import org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -32,16 +39,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 @EnableConfigurationProperties(JpaProperties.class)
 @EnableTransactionManagement
-@EnableJpaRepositories(entityManagerFactoryRef = "entityManagerFactory",
-        transactionManagerRef = "transactionManager",
-        basePackages = {"org.example.dao"})
+@EnableJpaRepositories(basePackages = "org.example.dao")
 public class JPAConfig {
-
-    private static final String HIBERNATE = "hibernate";
-    private static final String ECLIPSELINK = "eclipselink";
-    private static final String DATANUCLEUS = "datanucleus";
     private final HikariProps hikariProps;
     private final Environment environment;
+    private final List<JpaVendorAdapterProvider> jpaProviders;
 
     @Bean
     public DataSource dataSource() {
@@ -54,43 +56,34 @@ public class JPAConfig {
         final Properties properties = new Properties();
         properties.putAll(jpaProperties.getProperties());
 
-        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
-        em.setDataSource(dataSource);
-        em.setJpaProperties(properties);
-        em.setPackagesToScan("org.example.model");
-        em.setJpaVendorAdapter(createJpaVendorAdapter(em));
-        return em;
+        LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
+        emf.setDataSource(dataSource);
+        emf.setJpaProperties(properties);
+        emf.setPackagesToScan("org.example.model");
+        emf.setJpaVendorAdapter(createJpaVendorAdapter(emf));
+        return emf;
     }
 
 
-    protected AbstractJpaVendorAdapter createJpaVendorAdapter(LocalContainerEntityManagerFactoryBean em) {
+    protected AbstractJpaVendorAdapter createJpaVendorAdapter(LocalContainerEntityManagerFactoryBean emf) {
         Set<String> profiles = Set.of(environment.getActiveProfiles());
-        if (profiles.contains(HIBERNATE)) {
-            HibernateJpaVendorAdapter hibernateJpaVendorAdapter = new HibernateJpaVendorAdapter();
-            hibernateJpaVendorAdapter.setDatabasePlatform(H2Dialect.class.getName());
-            em.getJpaPropertyMap().put(AvailableSettings.HBM2DDL_AUTO, "create");
-            em.setPersistenceUnitName(HIBERNATE);
-            return hibernateJpaVendorAdapter;
-        } else if (profiles.contains(ECLIPSELINK)) {
-            EclipseLinkJpaVendorAdapter vendorAdapter = new EclipseLinkJpaVendorAdapter();
-            vendorAdapter.setDatabasePlatform(H2Platform.class.getName());
-            em.getJpaPropertyMap().put(PersistenceUnitProperties.DDL_GENERATION, PersistenceUnitProperties.CREATE_ONLY);
-            em.setPersistenceUnitName(ECLIPSELINK);
-            return vendorAdapter;
-        } else if (profiles.contains(DATANUCLEUS)) {
-            AbstractJpaVendorAdapter datanucleusJpaVendorAdapter = new AbstractJpaVendorAdapter() {
-                @Override
-                public PersistenceProvider getPersistenceProvider() {
-                    return new PersistenceProviderImpl();
-                }
-            };
-            datanucleusJpaVendorAdapter.setDatabasePlatform(H2Platform.class.getName());
-            em.getJpaPropertyMap().put("datanucleus.schema.autoCreateAll", "true");
-            em.setPersistenceUnitName(DATANUCLEUS);
-            return datanucleusJpaVendorAdapter;
-        } else {
-            throw new IllegalStateException("You should set one of profile (hibernate/eclipselink)");
+        if (profiles.isEmpty()) {
+            String providerNames = jpaProviders.stream()
+                    .map(JpaVendorAdapterProvider::getName)
+                    .collect(Collectors.joining(", "));
+            throw new IllegalStateException("Select one of the profiles: " + providerNames + ".");
         }
+        if (profiles.size() > 1) {
+            String providerNames = jpaProviders.stream()
+                    .map(JpaVendorAdapterProvider::getName)
+                    .collect(Collectors.joining(", "));
+            throw new IllegalStateException("Only one profile can be active! Current profiles: " + providerNames + ".");
+        }
+        JpaVendorAdapterProvider jpaVendorAdapterProvider = jpaProviders.stream()
+                .filter(provider -> profiles.contains(provider.getName()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Unknown profile: " + jpaProviders.stream().findFirst().get() + "."));
+        return jpaVendorAdapterProvider.getAdapter(emf);
     }
 
     @Bean

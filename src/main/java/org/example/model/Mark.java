@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @ToString
 @EqualsAndHashCode
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder(toBuilder = true)
+@AllArgsConstructor
 public class Mark {
 
     @GeneratedValue
