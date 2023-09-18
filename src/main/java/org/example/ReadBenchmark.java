@@ -47,8 +47,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-@Warmup(iterations = 3)
-@Measurement(iterations = 5)
+@Warmup(iterations = 5)
+@Measurement(iterations = 10)
 @SpringBootApplication
 public class ReadBenchmark {
     public static final int TOTAL_SUBJECTS = 1;
