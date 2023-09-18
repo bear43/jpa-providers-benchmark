@@ -1,6 +1,5 @@
 package org.example;
 
-import jakarta.persistence.EntityManagerFactory;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +26,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 
@@ -37,17 +35,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Warmup(iterations = 5)
 @Measurement(iterations = 10)
 @SpringBootApplication
-public class SpringBenchmark {
+public class ReadBenchmark {
 
     private static final int FULLNAME_LENGTH = 32;
     private static final int TOTAL_STUDENTS = 10_000;
 
     private ConfigurableApplicationContext context;
     private StudentDao studentDao;
+    private TransactionTemplate transactionTemplate;
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(SpringBenchmark.class.getSimpleName())
+                .include(ReadBenchmark.class.getSimpleName())
                 .forks(0)
                 .build();
 
@@ -59,11 +58,10 @@ public class SpringBenchmark {
         try {
             String args = "";
             if(context == null) {
-                context = SpringApplication.run(SpringBenchmark.class, args );
+                context = SpringApplication.run(ReadBenchmark.class, args );
             }
             studentDao = context.getBean(StudentDao.class);
-            PlatformTransactionManager transactionManager = context.getBean(PlatformTransactionManager.class);
-            TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+            transactionTemplate = context.getBean(TransactionTemplate.class);
             Random random = new Random();
             transactionTemplate.executeWithoutResult(status -> {
                 IntStream.range(1, TOTAL_STUDENTS + 1)
@@ -85,6 +83,8 @@ public class SpringBenchmark {
         List<Student> students = studentDao.findAll();
         blackhole.consume(students);
     }
+
+
     private Student createStudent(Random random, long id) {
         Student student = new Student();
         student.setCourse(random.nextInt() % 4);
