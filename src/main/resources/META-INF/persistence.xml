@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+        https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd" version="3.0">
+
+    <!-- Jakarta tutorial "unit" -->
+    <persistence-unit name="MyUnit">
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <class>org.example.model.Student</class>
+        <class>org.example.model.Subject</class>
+        <class>org.example.model.Mark</class>
+        <exclude-unlisted-classes/>
+        <properties>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:db1;DB_CLOSE_DELAY=-1"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+<!--            <property name="datanucleus.schema.autoCreateAll" value="true"/>-->
+<!--            <property name="datanucleus.connectionPoolingType" value="HikariCP"/>-->
+            <property name="eclipselink.ddl-generation"
+                      value="drop-and-create-tables"/>
+            <!--        pumd.addProperty("jakarta.persistence.jdbc.url", "jdbc:h2:mem:db1;DB_CLOSE_DELAY=-1");
+        pumd.addProperty("jakarta.persistence.jdbc.user", "sa");
+        pumd.addProperty("jakarta.persistence.jdbc.password", "");
+        pumd.addProperty("datanucleus.schema.autoCreateAll", "true");
+        pumd.addProperty("datanucleus.connectionPoolingType", "HikariCP");-->
+        </properties>
+    </persistence-unit>
+</persistence>
