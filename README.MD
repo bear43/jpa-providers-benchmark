@@ -30,6 +30,19 @@ The join table has each ManyToOne field in fetch mode LAZY to reach maximum perf
 * EclipseLink doesn't have any static/dynamic weaving thus there is no laziness.
 * Hibernate uses dynamic weaving with proxy mechanism aid.
 
+TOTAL_SUBJECTS = 10;</br>
+TOTAL_STUDENTS = 10_000;
+
+### Hibernate
+
+| Benchmark                          | Mode | Cnt | Score    | Error   | Units  |
+|------------------------------------|------|-----|----------|---------|--------|
+| ReadBenchmark.readAllFromFlatTable | avgt | 10  | 3.931    | ±0.010  | ms/op  |
+| ReadBenchmark.readAllFromJoinTable | avgt | 10  | 8.802    | ±0.033  | ms/op  |
+| WriteBenchmark.insertMarks         | avgt | 10  | 272.516  | ±0.934  | ms/op  |
+| WriteBenchmark.insertStudents      | avgt | 10  | 24.226   | ±0.033  | ms/op  |
+| WriteBenchmark.insertSubjects      | avgt | 10  | 0.022    | ±0.001  | ms/op  |
+
 
 **P.S**</br>
 DataNucleus is disqualified due to runtime errors after enhancing
