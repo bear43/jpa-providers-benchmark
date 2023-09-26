@@ -8,6 +8,7 @@ import org.instancio.Instancio;
 import org.instancio.Select;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -18,17 +19,17 @@ public class MarkGenerator implements Generator<Mark> {
 
     private final LocalDateTime minDatetime;
     private final LocalDateTime maxDatetime;
-    private final Set<Student> students;
-    private final Set<Subject> subjects;
+    private final List<Student> students;
+    private final List<Subject> subjects;
 
-    public MarkGenerator(LocalDateTime minDatetime, LocalDateTime maxDatetime, Set<Student> students, Set<Subject> subjects) {
+    public MarkGenerator(LocalDateTime minDatetime, LocalDateTime maxDatetime, List<Student> students, List<Subject> subjects) {
         this.minDatetime = minDatetime;
         this.maxDatetime = maxDatetime;
         this.students = students;
         this.subjects = subjects;
     }
 
-    public MarkGenerator(Set<Student> students, Set<Subject> subjects) {
+    public MarkGenerator(List<Student> students, List<Subject> subjects) {
         this(MIN_DATETIME_DEFAULT, MAX_DATETIME_DEFAULT, students, subjects);
     }
 

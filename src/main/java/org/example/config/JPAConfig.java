@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.datanucleus.api.jakarta.PersistenceProviderImpl;
 import org.eclipse.persistence.config.PersistenceUnitProperties;
 import org.eclipse.persistence.platform.database.H2Platform;
 import org.example.config.props.HikariProps;
@@ -82,7 +81,7 @@ public class JPAConfig {
         JpaVendorAdapterProvider jpaVendorAdapterProvider = jpaProviders.stream()
                 .filter(provider -> profiles.contains(provider.getName()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Unknown profile: " + jpaProviders.stream().findFirst().get() + "."));
+                .orElseThrow(() -> new IllegalStateException("Unknown profile: " + profiles.stream().findFirst().get() + "."));
         return jpaVendorAdapterProvider.getAdapter(emf);
     }
 

@@ -1,12 +1,5 @@
 package org.example;
 
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
 import org.example.dao.Dao;
 import org.example.generate.Generator;
 import org.example.generate.MarkGenerator;
@@ -15,16 +8,7 @@ import org.example.generate.SubjectGenerator;
 import org.example.model.Mark;
 import org.example.model.Student;
 import org.example.model.Subject;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
-import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -35,6 +19,17 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static org.example.BenchmarkRunner.TOTAL_STUDENTS;
+import static org.example.BenchmarkRunner.TOTAL_SUBJECTS;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -42,10 +37,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 @Warmup(iterations = 5)
 @Measurement(iterations = 10)
 @SpringBootApplication
-public class ReadBenchmark {
+public class WriteBenchmark {
     private static final AtomicReference<CountDownLatch> countDownLatch = new AtomicReference<>(new CountDownLatch(0));
     private ConfigurableApplicationContext context;
     private Dao dao;
+    private final List<Student> students = new ArrayList<>();
+    private final List<Subject> subjects = new ArrayList<>();
+    private final List<Mark> marks = new ArrayList<>();
 
     @Setup
     public void setup() throws InterruptedException {
@@ -66,17 +64,11 @@ public class ReadBenchmark {
     private void fillData() {
         Generator<Student> studentGenerator = new StudentGenerator();
         Generator<Subject> subjectGenerator = new SubjectGenerator();
-        List<Student> students = create(studentGenerator, BenchmarkRunner.TOTAL_STUDENTS, dao.getStudentDao());
-        List<Subject> subjects = create(subjectGenerator, BenchmarkRunner.TOTAL_SUBJECTS, dao.getSubjectDao());
+        students.addAll(studentGenerator.generate(TOTAL_STUDENTS).toList());
+        subjects.addAll(subjectGenerator.generate(TOTAL_SUBJECTS).toList());
 
         Generator<Mark> markGenerator = new MarkGenerator(students, subjects);
-        create(markGenerator, 0, dao.getMarkDao());
-    }
-
-    private <T> List<T> create(Generator<T> generator, int size, JpaRepository<T, Long> repository) {
-        return dao.getTransactionTemplate().execute(status -> generator.generate(size)
-                .map(repository::save)
-                .collect(Collectors.toList()));
+        marks.addAll(markGenerator.generate(0).toList());
     }
 
     @TearDown
@@ -86,14 +78,24 @@ public class ReadBenchmark {
     }
 
     @Benchmark
-    public void readAllFromFlatTable(Blackhole blackhole) {
-        List<Student> students = dao.getStudentDao().findAll();
-        blackhole.consume(students);
+    public void insertStudents(Blackhole blackhole) {
+        List<Student> result = dao.getStudentDao().saveAllAndFlush(students);
+        blackhole.consume(result);
     }
 
     @Benchmark
-    public void readAllFromJoinTable(Blackhole blackhole) {
-        List<Mark> marks = dao.getMarkDao().findAll();
-        blackhole.consume(marks);
+    public void insertSubjects(Blackhole blackhole) {
+        List<Subject> result = dao.getSubjectDao().saveAllAndFlush(subjects);
+        blackhole.consume(result);
+    }
+
+    @Benchmark
+    public void insertMarks(Blackhole blackhole) {
+        List<Student> studentsResult = dao.getStudentDao().saveAllAndFlush(students);
+        List<Subject> subjectsResult = dao.getSubjectDao().saveAllAndFlush(subjects);
+        List<Mark> marksResult = dao.getMarkDao().saveAllAndFlush(marks);
+        blackhole.consume(studentsResult);
+        blackhole.consume(subjectsResult);
+        blackhole.consume(marksResult);
     }
 }

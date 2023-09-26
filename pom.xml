@@ -87,12 +87,6 @@
             <artifactId>instancio-core</artifactId>
             <version>3.2.0</version>
         </dependency>
-        <dependency>
-            <groupId>org.datanucleus</groupId>
-            <artifactId>datanucleus-accessplatform-jakarta-rdbms</artifactId>
-            <version>6.0.0-m1</version>
-            <type>pom</type>
-        </dependency>
         <!-- https://mvnrepository.com/artifact/org.eclipse.persistence/eclipselink -->
         <dependency>
             <groupId>org.eclipse.persistence</groupId>
@@ -115,24 +109,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.datanucleus</groupId>
-                <artifactId>datanucleus-maven-plugin</artifactId>
-                <version>6.0.0-release</version>
-                <configuration>
-                    <api>Jakarta</api>
-                    <persistenceUnitName>MyUnit</persistenceUnitName>
-                    <verbose>true</verbose>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>enhance</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
