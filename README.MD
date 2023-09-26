@@ -1,9 +1,8 @@
-## JMH Benchmarks for top 3 JPA providers
+## JMH Benchmarks for top 2 JPA providers
 * Hibernate
-* Datanucleus
 * EclipseLink
 
-Idea is simple. 3 base models: `Student`, `Subject`, `Mark`.<br/>
+The idea is simple. 3 base models: `Student`, `Subject`, `Mark`.<br/>
 `Student` can have marks for certain(s) subject.
 
 Target measurement - get average ms/operation for reading all data in db for each table type.
@@ -25,8 +24,12 @@ ReadBenchmark class contains constants such as:
 | FULLNAME_LENGTH  | `Student.fullname` string value length (not database constraint, but code) |
 
 ReadBenchmark measures reading capabilities from `Student` (a flat table) and `Mark` (a join table).
+WriteBenchmark measures writing capabilities into the flat table and the join table.
 
 The join table has each ManyToOne field in fetch mode LAZY to reach maximum performance. 
 * EclipseLink doesn't have any static/dynamic weaving thus there is no laziness.
 * Hibernate uses dynamic weaving with proxy mechanism aid.
-* Datanucleus uses static weaving with code changing (or transformation) before final compilation stage.
+
+
+**P.S**</br>
+DataNucleus is disqualified due to runtime errors after enhancing
