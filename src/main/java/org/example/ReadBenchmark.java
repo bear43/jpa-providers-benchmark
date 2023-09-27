@@ -92,8 +92,54 @@ public class ReadBenchmark {
     }
 
     @Benchmark
+    public void readAllFromFlatTableInTx(Blackhole blackhole) {
+        dao.getTransactionTemplate().executeWithoutResult(status -> {
+            List<Student> students = dao.getStudentDao().findAll();
+            blackhole.consume(students);
+        });
+    }
+
+    @Benchmark
     public void readAllFromJoinTable(Blackhole blackhole) {
         List<Mark> marks = dao.getMarkDao().findAll();
         blackhole.consume(marks);
+    }
+
+    @Benchmark
+    public void readAllFromJoinTableInTx(Blackhole blackhole) {
+        dao.getTransactionTemplate().executeWithoutResult(status -> {
+            List<Mark> marks = dao.getMarkDao().findAll();
+            blackhole.consume(marks);
+        });
+    }
+
+    @Benchmark
+    public void readAllFromJoinTableInTxAccessStudentGetter(Blackhole blackhole) {
+        dao.getTransactionTemplate().executeWithoutResult(status -> {
+            List<Mark> marks = dao.getMarkDao().findAll();
+            marks.forEach(mark -> blackhole.consume(mark.getStudent()));
+            blackhole.consume(marks);
+        });
+    }
+
+    @Benchmark
+    public void readAllFromJoinTableInTxAccessSubjectGetter(Blackhole blackhole) {
+        dao.getTransactionTemplate().executeWithoutResult(status -> {
+            List<Mark> marks = dao.getMarkDao().findAll();
+            marks.forEach(mark -> blackhole.consume(mark.getSubject()));
+            blackhole.consume(marks);
+        });
+    }
+
+    @Benchmark
+    public void readAllFromJoinTableInTxAccessLazyGetters(Blackhole blackhole) {
+        dao.getTransactionTemplate().executeWithoutResult(status -> {
+            List<Mark> marks = dao.getMarkDao().findAll();
+            marks.forEach(mark -> {
+                blackhole.consume(mark.getStudent());
+                blackhole.consume(mark.getSubject());
+            });
+            blackhole.consume(marks);
+        });
     }
 }

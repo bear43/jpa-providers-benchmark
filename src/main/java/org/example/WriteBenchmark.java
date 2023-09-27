@@ -84,9 +84,25 @@ public class WriteBenchmark {
     }
 
     @Benchmark
+    public void insertStudentsInTx(Blackhole blackhole) {
+        dao.getTransactionTemplate().executeWithoutResult(status -> {
+            List<Student> result = dao.getStudentDao().saveAll(students);
+            blackhole.consume(result);
+        });
+    }
+
+    @Benchmark
     public void insertSubjects(Blackhole blackhole) {
         List<Subject> result = dao.getSubjectDao().saveAllAndFlush(subjects);
         blackhole.consume(result);
+    }
+
+    @Benchmark
+    public void insertSubjectsInTx(Blackhole blackhole) {
+        dao.getTransactionTemplate().executeWithoutResult(status -> {
+            List<Subject> result = dao.getSubjectDao().saveAllAndFlush(subjects);
+            blackhole.consume(result);
+        });
     }
 
     @Benchmark
@@ -97,5 +113,17 @@ public class WriteBenchmark {
         blackhole.consume(studentsResult);
         blackhole.consume(subjectsResult);
         blackhole.consume(marksResult);
+    }
+
+    @Benchmark
+    public void insertMarksInTx(Blackhole blackhole) {
+        dao.getTransactionTemplate().executeWithoutResult(status -> {
+            List<Student> studentsResult = dao.getStudentDao().saveAll(students);
+            List<Subject> subjectsResult = dao.getSubjectDao().saveAll(subjects);
+            List<Mark> marksResult = dao.getMarkDao().saveAll(marks);
+            blackhole.consume(studentsResult);
+            blackhole.consume(subjectsResult);
+            blackhole.consume(marksResult);
+        });
     }
 }
